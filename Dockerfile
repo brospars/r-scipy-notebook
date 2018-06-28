@@ -44,8 +44,7 @@ RUN conda install --quiet --yes \
     'vincent=0.4.*' \
     'beautifulsoup4=4.6.*' \
     'protobuf=3.*' \
-    'xlrd'  && \
-    
+    'xlrd' \    
     # R packages
     'r-base=3.4.1' \
     'r-irkernel=0.8*' \
@@ -65,7 +64,7 @@ RUN conda install --quiet --yes \
     'r-htmltools=0.3*' \
     'r-sparklyr=0.7*' \
     'r-htmlwidgets=1.0*' \
-    'r-hexbin=1.27*'
+    'r-hexbin=1.27*' && \
     conda remove --quiet --yes --force qt pyqt && \
     conda clean -tipsy && \
     # Activate ipywidgets extension in the environment that runs the notebook server
