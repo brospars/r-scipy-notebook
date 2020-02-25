@@ -1,7 +1,7 @@
 # Copyright (c) Benoit Rospars
 # Distributed under the terms of the Modified BSD License.
 # Based on R and Scipy notebook from https://github.com/jupyter/docker-stacks
-FROM jupyter/minimal-notebook
+FROM jupyter/minimal-notebook:63d0df23b673
 
 USER root
 
@@ -16,10 +16,11 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 USER $NB_UID
-    
+
+# Fix Python version
+RUN conda install --quiet --yes python=3.6.4
+
 # Install Python 3 packages
-# Remove pyqt and qt pulled in for matplotlib since we're only ever going to
-# use notebook-friendly backends in these images
 RUN conda install --quiet --yes \
     'conda-forge::blas=*=openblas' \
     'ipywidgets=7.2*' \
@@ -44,8 +45,10 @@ RUN conda install --quiet --yes \
     'vincent=0.4.*' \
     'beautifulsoup4=4.6.*' \
     'protobuf=3.*' \
-    'xlrd' \    
-    # R packages
+    'xlrd'
+
+# Install R packages
+RUN conda install --quiet --yes \
     'r-base=3.4.1' \
     'r-irkernel=0.8*' \
     'r-plyr=1.8*' \
@@ -64,14 +67,26 @@ RUN conda install --quiet --yes \
     'r-htmltools=0.3*' \
     'r-sparklyr=0.7*' \
     'r-htmlwidgets=1.0*' \
-    'r-hexbin=1.27*' && \
-    conda remove --quiet --yes --force qt pyqt && \
-    conda clean -tipsy && \
-    # Activate ipywidgets extension in the environment that runs the notebook server
-    jupyter nbextension enable --py widgetsnbextension --sys-prefix && \
+    'r-hexbin=1.27*'
+
+# Remove pyqt and qt pulled in for matplotlib since we're only ever going to
+# use notebook-friendly backends in these images
+RUN conda remove --quiet --yes --force qt pyqt
+
+# Clean up conda
+RUN conda clean --all -f -y
+
+
+RUN python -c 'import zmq.eventloop.zmqstream'
+
+# Activate ipywidgets extension in the environment that runs the notebook server
+RUN jupyter nbextension enable --py widgetsnbextension --sys-prefix && \
     # Also activate ipywidgets extension for JupyterLab
-    jupyter labextension install @jupyter-widgets/jupyterlab-manager@^0.35 && \
-    jupyter labextension install jupyterlab_bokeh@^0.5.0 && \
+    # Check this URL for most recent compatibilities
+    # https://github.com/jupyter-widgets/ipywidgets/tree/master/packages/jupyterlab-manager
+    jupyter labextension install @jupyter-widgets/jupyterlab-manager@^1.0.1 --no-build && \
+    jupyter labextension install jupyterlab_bokeh@1.0.0 --no-build && \
+    jupyter lab build && \
     npm cache clean --force && \
     rm -rf $CONDA_DIR/share/jupyter/lab/staging && \
     rm -rf /home/$NB_USER/.cache/yarn && \
